@@ -1,0 +1,46 @@
+{
+  "name": "bugtrack",
+  "version": "1.0.0",
+  "description": "BugTrack - Security Research Workflow Management Platform",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio"
+  },
+  "keywords": [
+    "security",
+    "bug-bounty",
+    "pentesting",
+    "recon"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@hookform/resolvers": "^3.9.1",
+    "@prisma/client": "^6.2.0",
+    "autoprefixer": "^10.4.20",
+    "bcryptjs": "^2.4.3",
+    "clsx": "^2.1.1",
+    "next": "^16.0.0",
+    "postcss": "^8.4.49",
+    "prisma": "^6.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.6",
+    "@types/react-dom": "^19.0.2"
+  }
+}
