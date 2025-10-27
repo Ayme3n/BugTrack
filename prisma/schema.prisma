@@ -1,13 +1,26 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// This is your Prisma schema file for BugTrack
+// Compatible with Supabase PostgreSQL for MVP, easily migrated to self-hosted later
+// 
+// SUPABASE SETUP:
+// 1. All IDs use UUID (not CUID) to match Supabase auth.uid()
+// 2. User.password_hash removed - Supabase Auth handles authentication
+// 3. directUrl required for Supabase connection pooler
+// 4. Enable RLS policies in Supabase dashboard after pushing this schema
+//
+// MIGRATION TO SELF-HOSTED (Phase 4+):
+// 1. Add password_hash back to User model
+// 2. Implement custom auth (bcrypt + JWT)
+// 3. Remove directUrl (not needed for direct PostgreSQL)
+// 4. Export data: pg_dump from Supabase, import to self-hosted
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Required for Supabase connection pooling
 }
 
 // ============================================================================
@@ -15,14 +28,15 @@ datasource db {
 // ============================================================================
 
 model User {
-  id              String    @id @default(cuid())
+  id              String    @id @default(uuid()) // Changed from cuid() to uuid() for Supabase compatibility
   email           String    @unique
-  password_hash   String
+  // Note: password_hash removed - Supabase Auth handles passwords in auth.users table
+  // We keep this table for extended user profile data
   name            String?
   avatar_url      String?
   
   // Two-Factor Authentication
-  two_fa_secret   String?   // Encrypted TOTP secret
+  // Note: Supabase Auth handles 2FA, but we can store additional metadata
   two_fa_enabled  Boolean   @default(false)
   
   // Account status
@@ -51,7 +65,7 @@ model User {
 // ============================================================================
 
 model Target {
-  id              String       @id @default(cuid())
+  id              String       @id @default(uuid())
   user_id         String
   name            String
   program_type    ProgramType
@@ -100,7 +114,7 @@ enum TargetStatus {
 // ============================================================================
 
 model Finding {
-  id                   String         @id @default(cuid())
+  id                   String         @id @default(uuid())
   user_id              String
   target_id            String?        // Optional link to target
   
@@ -173,7 +187,7 @@ enum WorkflowState {
 }
 
 model Attachment {
-  id              String         @id @default(cuid())
+  id              String         @id @default(uuid())
   finding_id      String
   filename        String
   original_name   String
@@ -205,7 +219,7 @@ enum AttachmentType {
 // ============================================================================
 
 model Payload {
-  id              String          @id @default(cuid())
+  id              String          @id @default(uuid())
   user_id         String
   category        PayloadCategory
   title           String
@@ -266,7 +280,7 @@ enum PayloadCategory {
 // ============================================================================
 
 model Note {
-  id                String   @id @default(cuid())
+  id                String   @id @default(uuid())
   user_id           String
   title             String   // Plain text (for browsing)
   encrypted_content String   @db.Text // AES-256-GCM encrypted
@@ -299,7 +313,7 @@ model Note {
 // ============================================================================
 
 model ToolJob {
-  id              String    @id @default(cuid())
+  id              String    @id @default(uuid())
   user_id         String
   target_id       String?   // Optional link to target
   tool_name       ToolName
@@ -365,7 +379,7 @@ enum JobStatus {
 // ============================================================================
 
 model UserQuota {
-  id              String   @id @default(cuid())
+  id              String   @id @default(uuid())
   user_id         String   @unique
   
   // Per-hour limits
