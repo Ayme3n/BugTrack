@@ -3,6 +3,7 @@
  */
 
 import { createServerSupabaseClient } from '@/lib/supabase/server-client';
+import Link from 'next/link';
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabaseClient();
@@ -87,8 +88,8 @@ export default async function DashboardPage() {
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <a
-            href="/targets/new"
+          <Link
+            href="/dashboard/targets/new"
             className="flex items-center gap-3 p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
           >
             <span className="text-2xl">🎯</span>
@@ -100,9 +101,9 @@ export default async function DashboardPage() {
                 Start a new program
               </p>
             </div>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/findings/new"
             className="flex items-center gap-3 p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
           >
@@ -115,9 +116,9 @@ export default async function DashboardPage() {
                 Document a vulnerability
               </p>
             </div>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/payloads/new"
             className="flex items-center gap-3 p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
           >
@@ -130,7 +131,7 @@ export default async function DashboardPage() {
                 Add to your library
               </p>
             </div>
-          </a>
+          </Link>
         </div>
       </div>
 
