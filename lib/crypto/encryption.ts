@@ -23,7 +23,7 @@ export async function deriveKeyFromPassphrase(
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt,
+      salt: salt as BufferSource,
       iterations,
       hash: 'SHA-256',
     },
@@ -120,8 +120,8 @@ export async function importKey(jwkString: string): Promise<CryptoKey> {
 // Helper Functions
 // ============================================================================
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
+function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array): string {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i++) {
     binary += String.fromCharCode(bytes[i]);
@@ -149,7 +149,7 @@ export function generateSalt(): Uint8Array {
  * Convert salt to base64 for storage
  */
 export function saltToBase64(salt: Uint8Array): string {
-  return arrayBufferToBase64(salt.buffer);
+  return arrayBufferToBase64(salt);
 }
 
 /**

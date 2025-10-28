@@ -1,0 +1,43 @@
+# ============================================================================
+# BugTrack Environment Configuration Template
+# ============================================================================
+# 
+# INSTRUCTIONS:
+# 1. Copy this entire file content
+# 2. Create a file named .env in your project root
+# 3. Paste this content into .env
+# 4. Replace all placeholder values with your actual Supabase credentials
+# ============================================================================
+
+# ============================================================================
+# Supabase Configuration
+# ============================================================================
+# Get these from: Supabase Dashboard → Settings → API
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# ============================================================================
+# Database Configuration (Prisma + Supabase)
+# ============================================================================
+# Get this from: Supabase Dashboard → Settings → Database → Connection string (URI format)
+# Format: postgresql://postgres:[YOUR-PASSWORD]@db.xxxxx.supabase.co:5432/postgres
+DATABASE_URL=postgresql://postgres:your-password@db.your-project-id.supabase.co:5432/postgres
+DIRECT_URL=postgresql://postgres:your-password@db.your-project-id.supabase.co:5432/postgres
+
+# Note: DIRECT_URL should be the same as DATABASE_URL for Supabase
+# It's required for Prisma migrations with Supabase's connection pooler
+
+# ============================================================================
+# Application Configuration
+# ============================================================================
+NODE_ENV=development
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# ============================================================================
+# Encryption Configuration (for encrypted notes and payloads)
+# ============================================================================
+# Generate a secure 32-byte key with: openssl rand -hex 32
+# This key is used for server-side encryption operations
+ENCRYPTION_KEY=your_64_character_hex_string_here
+

@@ -6,6 +6,42 @@ BugTrack is a full-stack web application that lets security researchers manage t
 
 ---
 
+## 🚀 Quick Start
+
+**Got the "DIRECT_URL not found" error?** → See [`START_HERE.md`](./START_HERE.md)
+
+### Fast Setup (20 minutes)
+
+1. **Create `.env` file**:
+   ```bash
+   # Windows:
+   create-env.bat
+   
+   # Linux/Mac:
+   ./create-env.sh
+   ```
+
+2. **Get Supabase credentials** from https://supabase.com (free tier)
+
+3. **Push database schema**:
+   ```bash
+   npx prisma db push
+   ```
+
+4. **Start the app**:
+   ```bash
+   npm run dev
+   ```
+
+5. **Visit**: http://localhost:3000
+
+**Need help?** See comprehensive guides:
+- 🚨 **[QUICK_FIX.md](./QUICK_FIX.md)** - 5-minute setup fix
+- 📖 **[START_HERE.md](./START_HERE.md)** - Complete getting started guide
+- ⚙️ **[SETUP_INSTRUCTIONS.md](./SETUP_INSTRUCTIONS.md)** - Detailed setup walkthrough
+
+---
+
 ## Features
 
 ### MVP (Phase 1)
@@ -43,10 +79,10 @@ BugTrack is a full-stack web application that lets security researchers manage t
 
 ### Backend
 - **API**: Next.js API Routes
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL (via Supabase)
 - **ORM**: Prisma
-- **Auth**: Custom (NextAuth.js or Supabase Auth planned)
-- **Storage**: Supabase Storage or S3
+- **Auth**: Supabase Auth (with 2FA support)
+- **Storage**: Supabase Storage
 
 ### Tool Runner (Phase 2)
 - **Runtime**: Node.js + Dockerode
@@ -58,48 +94,52 @@ BugTrack is a full-stack web application that lets security researchers manage t
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+ and npm
-- PostgreSQL 15+
-- Docker (for Phase 2 tools)
+- Node.js 18+ and npm (installed ✅)
+- Supabase account (free tier)
+- Docker (for Phase 2 tools - not needed yet)
 
-### Installation
+### Quick Installation
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/bugtrack/bugtrack.git
-   cd bugtrack
-   ```
+**See [`START_HERE.md`](./START_HERE.md) for the complete guide.**
 
-2. **Install dependencies**:
+1. **Install dependencies** (if not already done):
    ```bash
    npm install
    ```
 
-3. **Set up environment variables**:
+2. **Set up environment variables**:
    ```bash
-   cp .env.example .env
+   # Windows:
+   create-env.bat
+   
+   # Linux/Mac:
+   cp ENV_TEMPLATE.txt .env
    ```
-   Edit `.env` and configure:
-   - `DATABASE_URL`: PostgreSQL connection string
-   - `NEXTAUTH_SECRET`: Generate with `openssl rand -base64 32`
-   - Storage credentials (Supabase or AWS S3)
+   
+   Edit `.env` and add your Supabase credentials:
+   - `NEXT_PUBLIC_SUPABASE_URL` - From Supabase Settings → API
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - From Supabase Settings → API
+   - `SUPABASE_SERVICE_ROLE_KEY` - From Supabase Settings → API
+   - `DATABASE_URL` - From Supabase Settings → Database
+   - `DIRECT_URL` - Same as DATABASE_URL
+   - `ENCRYPTION_KEY` - Generate with `openssl rand -hex 32`
 
-4. **Set up the database**:
+3. **Push database schema**:
    ```bash
-   npm run db:push
+   npx prisma db push
    ```
 
-5. **Generate Prisma Client**:
-   ```bash
-   npm run db:generate
-   ```
-
-6. **Run the development server**:
+4. **Run the development server**:
    ```bash
    npm run dev
    ```
 
-7. **Open** [http://localhost:3000](http://localhost:3000)
+5. **Open** [http://localhost:3000](http://localhost:3000)
+
+**Troubleshooting?** Check these guides:
+- [`QUICK_FIX.md`](./QUICK_FIX.md) - Common errors
+- [`SETUP_INSTRUCTIONS.md`](./SETUP_INSTRUCTIONS.md) - Detailed setup
+- [`docs/SUPABASE_SETUP.md`](./docs/SUPABASE_SETUP.md) - Supabase configuration
 
 ---
 
@@ -209,11 +249,24 @@ See [`docs/security.md`](./docs/security.md) for complete security documentation
 
 ## Roadmap
 
-**Current Phase**: Phase 0 (Project Foundation) ✅
+**Current Phase**: Sprint 1 Complete ✅ → Moving to Sprint 2
+
+### Phase 0 - Foundation ✅
+- [x] Complete documentation (9 files, 4,848+ lines)
+- [x] Architecture & security design
+- [x] Database schema (8 tables)
+- [x] Supabase integration
 
 ### Phase 1 - MVP (Sprints 1-6)
-- [ ] Authentication & User Profile
-- [ ] Target Management
+- [x] **Sprint 1**: Authentication & User Profile ✅
+  - Login/Register pages
+  - Supabase Auth integration
+  - Protected dashboard
+  - Profile management
+- [ ] **Sprint 2**: Target Management (Next!)
+  - Create/edit targets
+  - Scope definition
+  - Target dashboard
 - [ ] Findings Management with Attachments & Export
 - [ ] Payload Library
 - [ ] Encrypted Notes
