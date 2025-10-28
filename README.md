@@ -8,38 +8,6 @@ BugTrack is a full-stack web application that lets security researchers manage t
 
 ## 🚀 Quick Start
 
-**Got the "DIRECT_URL not found" error?** → See [`START_HERE.md`](./START_HERE.md)
-
-### Fast Setup (20 minutes)
-
-1. **Create `.env` file**:
-   ```bash
-   # Windows:
-   create-env.bat
-   
-   # Linux/Mac:
-   ./create-env.sh
-   ```
-
-2. **Get Supabase credentials** from https://supabase.com (free tier)
-
-3. **Push database schema**:
-   ```bash
-   npx prisma db push
-   ```
-
-4. **Start the app**:
-   ```bash
-   npm run dev
-   ```
-
-5. **Visit**: http://localhost:3000
-
-**Need help?** See comprehensive guides:
-- 🚨 **[QUICK_FIX.md](./QUICK_FIX.md)** - 5-minute setup fix
-- 📖 **[START_HERE.md](./START_HERE.md)** - Complete getting started guide
-- ⚙️ **[SETUP_INSTRUCTIONS.md](./SETUP_INSTRUCTIONS.md)** - Detailed setup walkthrough
-
 ---
 
 ## Features
