@@ -27,7 +27,7 @@ export default function DashboardNav({ user }: DashboardNavProps) {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '🏠' },
     { href: '/dashboard/targets', label: 'Targets', icon: '🎯' },
-    { href: '/findings', label: 'Findings', icon: '🔍' },
+    { href: '/dashboard/findings', label: 'Findings', icon: '🔍' },
     { href: '/payloads', label: 'Payloads', icon: '💉' },
     { href: '/notes', label: 'Notes', icon: '🔒' },
     { href: '/tools', label: 'Tools', icon: '🛠️', badge: 'Phase 2' },

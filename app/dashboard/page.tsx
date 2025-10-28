@@ -104,7 +104,7 @@ export default async function DashboardPage() {
           </Link>
 
           <Link
-            href="/findings/new"
+            href="/dashboard/findings/new"
             className="flex items-center gap-3 p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
           >
             <span className="text-2xl">🔍</span>
