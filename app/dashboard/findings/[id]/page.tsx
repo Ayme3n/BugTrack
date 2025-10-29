@@ -7,6 +7,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server-client';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
+import ExportButtons from '@/components/features/findings/ExportButtons';
 
 export default async function FindingDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createServerSupabaseClient();
@@ -108,13 +109,25 @@ export default async function FindingDetailsPage({ params }: { params: Promise<{
             </div>
           </div>
           
-          {/* Edit Button */}
-          <Link
-            href={`/dashboard/findings/${finding.id}/edit`}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-          >
-            Edit
-          </Link>
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-2">
+            {/* Export Buttons */}
+            <ExportButtons 
+              finding={{
+                ...finding,
+                steps_to_reproduce: finding.reproduction_steps,
+                description: finding.description_md,
+              }} 
+            />
+            
+            {/* Edit Button */}
+            <Link
+              href={`/dashboard/findings/${finding.id}/edit`}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center"
+            >
+              ✏️ Edit
+            </Link>
+          </div>
         </div>
       </div>
 
