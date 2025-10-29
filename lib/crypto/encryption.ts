@@ -3,6 +3,26 @@
  * These functions are meant to run in the browser for zero-knowledge encryption
  */
 
+// Get the crypto API (browser only)
+const getCrypto = () => {
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined') {
+    throw new Error('Crypto API is only available in the browser (no window object)');
+  }
+  
+  // Check if crypto is available
+  if (!window.crypto) {
+    throw new Error('Crypto API is not available in this browser');
+  }
+  
+  // Check if subtle crypto is available
+  if (!window.crypto.subtle) {
+    throw new Error('SubtleCrypto API is not available. Make sure you\'re using HTTPS or localhost.');
+  }
+  
+  return window.crypto;
+};
+
 /**
  * Derive an encryption key from a passphrase using PBKDF2
  */
@@ -11,6 +31,7 @@ export async function deriveKeyFromPassphrase(
   salt: Uint8Array,
   iterations: number = 310000
 ): Promise<CryptoKey> {
+  const crypto = getCrypto();
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -38,6 +59,7 @@ export async function deriveKeyFromPassphrase(
  * Generate a random encryption key
  */
 export async function generateKey(): Promise<CryptoKey> {
+  const crypto = getCrypto();
   return crypto.subtle.generateKey(
     { name: 'AES-GCM', length: 256 },
     true, // extractable
@@ -52,6 +74,7 @@ export async function encrypt(
   data: string,
   key: CryptoKey
 ): Promise<{ encrypted: string; iv: string }> {
+  const crypto = getCrypto();
   const enc = new TextEncoder();
   const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV for GCM
 
@@ -75,6 +98,7 @@ export async function decrypt(
   iv: string,
   key: CryptoKey
 ): Promise<string> {
+  const crypto = getCrypto();
   const decrypted = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv: base64ToArrayBuffer(iv) },
     key,
@@ -89,6 +113,7 @@ export async function decrypt(
  * Generate SHA-256 hash of data for integrity checking
  */
 export async function hash(data: string): Promise<string> {
+  const crypto = getCrypto();
   const enc = new TextEncoder();
   const hashBuffer = await crypto.subtle.digest('SHA-256', enc.encode(data));
   return arrayBufferToBase64(hashBuffer);
@@ -98,6 +123,7 @@ export async function hash(data: string): Promise<string> {
  * Export key to JWK format for storage
  */
 export async function exportKey(key: CryptoKey): Promise<string> {
+  const crypto = getCrypto();
   const exported = await crypto.subtle.exportKey('jwk', key);
   return JSON.stringify(exported);
 }
@@ -106,6 +132,7 @@ export async function exportKey(key: CryptoKey): Promise<string> {
  * Import key from JWK format
  */
 export async function importKey(jwkString: string): Promise<CryptoKey> {
+  const crypto = getCrypto();
   const jwk = JSON.parse(jwkString);
   return crypto.subtle.importKey(
     'jwk',
@@ -142,6 +169,7 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
  * Generate random salt for key derivation
  */
 export function generateSalt(): Uint8Array {
+  const crypto = getCrypto();
   return crypto.getRandomValues(new Uint8Array(16)); // 128-bit salt
 }
 
