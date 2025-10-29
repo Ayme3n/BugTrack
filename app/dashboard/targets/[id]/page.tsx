@@ -6,6 +6,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server-client';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
+import DeleteButton from '@/components/features/targets/DeleteButton';
 
 export default async function TargetDetailsPage({
   params,
@@ -92,8 +93,13 @@ export default async function TargetDetailsPage({
               href={`/dashboard/targets/${target.id}/edit`}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
             >
-              Edit
+              ✏️ Edit
             </Link>
+            
+            <DeleteButton 
+              targetId={target.id} 
+              targetName={target.name}
+            />
           </div>
         </div>
       </div>
