@@ -28,8 +28,8 @@ export default function DashboardNav({ user }: DashboardNavProps) {
     { href: '/dashboard', label: 'Dashboard', icon: '🏠' },
     { href: '/dashboard/targets', label: 'Targets', icon: '🎯' },
     { href: '/dashboard/findings', label: 'Findings', icon: '🔍' },
-    { href: '/payloads', label: 'Payloads', icon: '💉' },
-    { href: '/notes', label: 'Notes', icon: '🔒' },
+    { href: '/dashboard/payloads', label: 'Payloads', icon: '💉' },
+    { href: '/notes', label: 'Notes', icon: '🔒', badge: 'Soon' },
     { href: '/tools', label: 'Tools', icon: '🛠️', badge: 'Phase 2' },
   ];
 
