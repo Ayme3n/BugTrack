@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import type { User } from '@supabase/supabase-js';
+import DarkModeToggle from '@/components/ui/DarkModeToggle';
 
 interface DashboardHeaderProps {
   user: User;
@@ -84,22 +85,8 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
               {/* <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span> */}
             </button>
 
-            {/* Theme toggle (placeholder) */}
-            <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                />
-              </svg>
-            </button>
+            {/* Dark Mode Toggle */}
+            <DarkModeToggle />
           </div>
         </div>
       </div>

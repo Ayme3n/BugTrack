@@ -4,8 +4,7 @@
 
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server-client';
-import DashboardNav from '@/components/features/dashboard/DashboardNav';
-import DashboardHeader from '@/components/features/dashboard/DashboardHeader';
+import DashboardClientLayout from '@/components/layouts/DashboardClientLayout';
 
 export default async function DashboardLayout({
   children,
@@ -22,20 +21,6 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar */}
-      <DashboardNav user={user} />
-
-      {/* Main Content */}
-      <div className="lg:pl-64">
-        {/* Header */}
-        <DashboardHeader user={user} />
-
-        {/* Page Content */}
-        <main className="p-6">{children}</main>
-      </div>
-    </div>
-  );
+  return <DashboardClientLayout user={user}>{children}</DashboardClientLayout>;
 }
 
