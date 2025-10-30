@@ -52,6 +52,7 @@ model User {
   findings        Finding[]
   payloads        Payload[]
   notes           Note[]
+  notifications   Notification[]
   tool_jobs       ToolJob[]
   user_quota      UserQuota?
   
@@ -306,6 +307,48 @@ model Note {
   @@index([is_favorite])
   @@index([created_at])
   @@map("notes")
+}
+
+// ============================================================================
+// Notifications System
+// ============================================================================
+
+model Notification {
+  id            String           @id @default(uuid())
+  user_id       String
+  type          NotificationType
+  title         String
+  message       String           @db.Text
+  link_url      String?          // Optional link to related resource
+  icon          String?          // Icon name or emoji
+  
+  // Status
+  is_read       Boolean          @default(false)
+  read_at       DateTime?
+  
+  // Metadata
+  metadata      Json?            // Additional context data
+  
+  // Timestamp
+  created_at    DateTime         @default(now())
+  
+  // Relations
+  user          User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([is_read])
+  @@index([created_at])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  FINDING_CREATED   // New finding created
+  FINDING_UPDATED   // Finding status changed
+  TARGET_ADDED      // New target added
+  PAYLOAD_USED      // Payload copied/used
+  SYSTEM            // System notifications
+  ACHIEVEMENT       // Milestone reached
+  REMINDER          // User reminders
 }
 
 // ============================================================================
