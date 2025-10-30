@@ -5,7 +5,7 @@
  * Form to document a new vulnerability discovery
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -39,6 +39,19 @@ export default function NewFindingPage() {
     tags: '',
     reward_amount: '',
   });
+
+  // Memoized markdown editor onChange handler
+  const handleDescriptionChange = useCallback((value: string) => {
+    setFormData(prev => ({ ...prev, description_md: value }));
+  }, []);
+
+  // Memoized editor options
+  const editorOptions = useMemo(() => ({
+    spellChecker: false,
+    placeholder: 'Describe the vulnerability in detail...',
+    status: false,
+    toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', '|', 'preview', 'side-by-side', 'fullscreen', '|', 'guide'],
+  }), []);
 
   // Fetch user's targets
   useEffect(() => {
@@ -277,13 +290,8 @@ export default function NewFindingPage() {
           </h2>
           <SimpleMDE
             value={formData.description_md}
-            onChange={(value) => setFormData({ ...formData, description_md: value })}
-            options={{
-              spellChecker: false,
-              placeholder: 'Describe the vulnerability in detail...',
-              status: false,
-              toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', '|', 'preview', 'side-by-side', 'fullscreen', '|', 'guide'],
-            }}
+            onChange={handleDescriptionChange}
+            options={editorOptions}
           />
         </div>
 

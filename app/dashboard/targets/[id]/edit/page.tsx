@@ -136,7 +136,7 @@ export default function EditTargetPage({
       if (updateError) throw updateError;
 
       // Redirect to target details
-      router.push(`/targets/${id}`);
+      router.push(`/dashboard/targets/${id}`);
     } catch (err: any) {
       console.error('Error updating target:', err);
       setError(err.message || 'Failed to update target');
