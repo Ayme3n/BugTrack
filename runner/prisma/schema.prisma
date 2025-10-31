@@ -1,0 +1,447 @@
+// This is your Prisma schema file for BugTrack
+// Compatible with Supabase PostgreSQL for MVP, easily migrated to self-hosted later
+// 
+// SUPABASE SETUP:
+// 1. All IDs use UUID (not CUID) to match Supabase auth.uid()
+// 2. User.password_hash removed - Supabase Auth handles authentication
+// 3. directUrl required for Supabase connection pooler
+// 4. Enable RLS policies in Supabase dashboard after pushing this schema
+//
+// MIGRATION TO SELF-HOSTED (Phase 4+):
+// 1. Add password_hash back to User model
+// 2. Implement custom auth (bcrypt + JWT)
+// 3. Remove directUrl (not needed for direct PostgreSQL)
+// 4. Export data: pg_dump from Supabase, import to self-hosted
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+// ============================================================================
+// User & Authentication
+// ============================================================================
+
+model User {
+  id              String    @id @default(uuid()) // Changed from cuid() to uuid() for Supabase compatibility
+  email           String    @unique
+  // Note: password_hash removed - Supabase Auth handles passwords in auth.users table
+  // We keep this table for extended user profile data
+  name            String?
+  avatar_url      String?
+  
+  // Two-Factor Authentication
+  // Note: Supabase Auth handles 2FA, but we can store additional metadata
+  two_fa_enabled  Boolean   @default(false)
+  
+  // Account status
+  email_verified  Boolean   @default(false)
+  last_login_at   DateTime?
+  
+  // Timestamps
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  
+  // Relations
+  targets         Target[]
+  findings        Finding[]
+  payloads        Payload[]
+  notes           Note[]
+  notifications   Notification[]
+  tool_jobs       ToolJob[]
+  user_quota      UserQuota?
+  
+  @@index([email])
+  @@index([created_at])
+  @@map("users")
+}
+
+// ============================================================================
+// Targets Management
+// ============================================================================
+
+model Target {
+  id              String       @id @default(uuid())
+  user_id         String
+  name            String
+  program_type    ProgramType
+  url             String?
+  platform        String?      // "HackerOne", "Bugcrowd", "Private", etc.
+  scope_json      Json         // Structured scope definition
+  status          TargetStatus @default(ACTIVE)
+  tags            String[]     // Array of tag strings
+  notes           String?      @db.Text
+  priority        Int          @default(2) // 1=High, 2=Medium, 3=Low
+  reward_range    String?      // "$500-$10,000"
+  
+  // Timestamps
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+  
+  // Relations
+  user            User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  findings        Finding[]
+  tool_jobs       ToolJob[]
+  
+  @@index([user_id])
+  @@index([status])
+  @@index([priority])
+  @@index([created_at])
+  @@map("targets")
+}
+
+enum ProgramType {
+  BUG_BOUNTY
+  VDP
+  PENTEST
+  PERSONAL
+  CTF
+}
+
+enum TargetStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+// ============================================================================
+// Findings Management
+// ============================================================================
+
+model Finding {
+  id                   String         @id @default(uuid())
+  user_id              String
+  target_id            String?        // Optional link to target
+  
+  // Core information
+  title                String
+  severity             Severity
+  status               FindingStatus  @default(DRAFT)
+  workflow_state       WorkflowState  @default(DRAFT)
+  cvss_score           Float?         // 0.0-10.0
+  vulnerability_type   String?        // "XSS", "SQLi", "IDOR", etc.
+  
+  // Detailed content
+  description_md       String         @db.Text // Markdown description
+  impact               String?        @db.Text
+  reproduction_steps   String?        @db.Text
+  remediation          String?        @db.Text
+  references           String[]       // URLs to references
+  tags                 String[]
+  
+  // Tracking
+  reported_at          DateTime?
+  resolved_at          DateTime?
+  reward_amount        String?        // "$500", "€1000", etc.
+  
+  // Timestamps
+  created_at           DateTime       @default(now())
+  updated_at           DateTime       @updatedAt
+  
+  // Relations
+  user                 User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  target               Target?        @relation(fields: [target_id], references: [id], onDelete: SetNull)
+  attachments          Attachment[]
+  
+  @@index([user_id])
+  @@index([target_id])
+  @@index([severity])
+  @@index([workflow_state])
+  @@index([created_at])
+  @@map("findings")
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum FindingStatus {
+  DRAFT
+  READY
+  REPORTED
+  ACCEPTED
+  DUPLICATE
+  NOT_APPLICABLE
+  RESOLVED
+}
+
+enum WorkflowState {
+  DRAFT          // Initial state
+  TESTING        // Validating the vulnerability
+  REPORTED       // Submitted to program
+  TRIAGED        // Program confirmed receipt
+  ACCEPTED       // Program validated the finding
+  FIXED          // Vulnerability patched
+  DUPLICATE      // Marked as duplicate
+  NOT_APPLICABLE // Out of scope or not valid
+  REWARDED       // Bounty paid
+}
+
+model Attachment {
+  id              String         @id @default(uuid())
+  finding_id      String
+  filename        String
+  original_name   String
+  file_url        String         // Storage URL
+  file_size       Int            // Bytes
+  mime_type       String
+  attachment_type AttachmentType @default(OTHER)
+  
+  // Timestamp
+  uploaded_at     DateTime       @default(now())
+  
+  // Relations
+  finding         Finding        @relation(fields: [finding_id], references: [id], onDelete: Cascade)
+  
+  @@index([finding_id])
+  @@map("attachments")
+}
+
+enum AttachmentType {
+  SCREENSHOT
+  POC_CODE
+  VIDEO
+  DOCUMENT
+  OTHER
+}
+
+// ============================================================================
+// Payload Library
+// ============================================================================
+
+model Payload {
+  id              String          @id @default(uuid())
+  user_id         String
+  category        PayloadCategory
+  title           String
+  content         String          @db.Text // Plain or encrypted payload
+  description     String?
+  tags            String[]
+  
+  // Encryption
+  is_encrypted    Boolean         @default(false)
+  encryption_iv   String?         // Initialization vector (if encrypted)
+  
+  // Usage tracking
+  is_favorite     Boolean         @default(false)
+  usage_count     Int             @default(0)
+  
+  // Metadata
+  source_url      String?         // Attribution/reference
+  language        String?         // For syntax highlighting
+  
+  // Timestamps
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  
+  // Relations
+  user            User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([category])
+  @@index([is_favorite])
+  @@index([created_at])
+  @@map("payloads")
+}
+
+enum PayloadCategory {
+  XSS
+  SQLI
+  COMMAND_INJECTION
+  SSRF
+  XXE
+  LFI_RFI
+  IDOR
+  CSRF
+  AUTH_BYPASS
+  DESERIALIZATION
+  TEMPLATE_INJECTION
+  LDAP_INJECTION
+  NOSQL_INJECTION
+  PROTOTYPE_POLLUTION
+  RACE_CONDITION
+  RECON_COMMAND
+  FUZZING_WORDLIST
+  CUSTOM_SCRIPT
+  OTHER
+}
+
+// ============================================================================
+// Encrypted Notes
+// ============================================================================
+
+model Note {
+  id                String   @id @default(uuid())
+  user_id           String
+  title             String   // Plain text (for browsing)
+  encrypted_content String   @db.Text // AES-256-GCM encrypted
+  encryption_iv     String   // Initialization vector
+  content_hash      String?  // SHA-256 hash for integrity
+  
+  // Organization
+  is_favorite       Boolean  @default(false)
+  tags              String[] // Plain text tags
+  color             String?  // Hex color for UI
+  
+  // Usage tracking
+  last_accessed_at  DateTime?
+  
+  // Timestamps
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  
+  // Relations
+  user              User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([is_favorite])
+  @@index([created_at])
+  @@map("notes")
+}
+
+// ============================================================================
+// Notifications System
+// ============================================================================
+
+model Notification {
+  id            String           @id @default(uuid())
+  user_id       String
+  type          NotificationType
+  title         String
+  message       String           @db.Text
+  link_url      String?          // Optional link to related resource
+  icon          String?          // Icon name or emoji
+  
+  // Status
+  is_read       Boolean          @default(false)
+  read_at       DateTime?
+  
+  // Metadata
+  metadata      Json?            // Additional context data
+  
+  // Timestamp
+  created_at    DateTime         @default(now())
+  
+  // Relations
+  user          User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([is_read])
+  @@index([created_at])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  FINDING_CREATED   // New finding created
+  FINDING_UPDATED   // Finding status changed
+  TARGET_ADDED      // New target added
+  PAYLOAD_USED      // Payload copied/used
+  SYSTEM            // System notifications
+  ACHIEVEMENT       // Milestone reached
+  REMINDER          // User reminders
+}
+
+// ============================================================================
+// Tools Integration (Phase 2)
+// ============================================================================
+
+model ToolJob {
+  id              String    @id @default(uuid())
+  user_id         String
+  target_id       String?   // Optional link to target
+  tool_name       ToolName
+  target_input    String    // Domain, URL, or IP to scan
+  params_json     Json?     // Tool-specific parameters
+  status          JobStatus @default(QUEUED)
+  priority        Int       @default(5) // 1=High, 10=Low
+  
+  // Execution details
+  started_at      DateTime?
+  completed_at    DateTime?
+  duration_ms     Int?      // Execution time in milliseconds
+  exit_code       Int?
+  
+  // Results
+  result_json     Json?     // Structured output
+  result_count    Int?      // Number of results found
+  raw_output      String?   @db.Text // Raw stdout (optional)
+  error_output    String?   @db.Text // stderr if failed
+  
+  // Metadata
+  container_id    String?   // Docker container ID
+  runner_node     String?   // Which runner node executed this
+  
+  // Timestamp
+  created_at      DateTime  @default(now())
+  
+  // Relations
+  user            User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  target          Target?   @relation(fields: [target_id], references: [id], onDelete: SetNull)
+  
+  @@index([user_id])
+  @@index([status])
+  @@index([tool_name])
+  @@index([created_at])
+  @@map("tool_jobs")
+}
+
+enum ToolName {
+  SUBFINDER
+  HTTPX
+  GAU
+  WAYBACKURLS
+  FFUF
+  DIRSEARCH
+  NUCLEI
+  NMAP         // Future
+  AMASS        // Future
+  MASSCAN      // Future
+}
+
+enum JobStatus {
+  QUEUED       // Waiting to execute
+  RUNNING      // Currently executing
+  COMPLETED    // Finished successfully
+  FAILED       // Execution error
+  TIMEOUT      // Exceeded time limit
+  CANCELLED    // User cancelled
+}
+
+// ============================================================================
+// Rate Limiting & Quotas
+// ============================================================================
+
+model UserQuota {
+  id              String   @id @default(uuid())
+  user_id         String   @unique
+  
+  // Per-hour limits
+  jobs_this_hour  Int      @default(0)
+  jobs_hour_reset DateTime
+  
+  // Per-day limits
+  jobs_today      Int      @default(0)
+  jobs_day_reset  DateTime
+  
+  // Lifetime stats
+  total_jobs      Int      @default(0)
+  total_duration_ms BigInt @default(0)
+  
+  // Timestamp
+  updated_at      DateTime @updatedAt
+  
+  // Relations
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@map("user_quotas")
+}
+

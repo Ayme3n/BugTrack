@@ -30,7 +30,7 @@ export default function DashboardNav({ user }: DashboardNavProps) {
     { href: '/dashboard/findings', label: 'Findings', icon: '🔍' },
     { href: '/dashboard/payloads', label: 'Payloads', icon: '💉' },
     { href: '/dashboard/notes', label: 'Notes', icon: '🔒' },
-    { href: '/tools', label: 'Tools', icon: '🛠️', badge: 'Phase 2' },
+    { href: '/dashboard/tools', label: 'Tools', icon: '🛠️', badge: 'NEW' },
   ];
 
   return (
