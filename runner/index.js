@@ -22,6 +22,7 @@ const docker = new Docker();
 // Configuration
 const POLL_INTERVAL = 5000; // Check for new jobs every 5 seconds
 const JOB_TIMEOUT = 300000; // 5 minutes max per job
+const IMAGE_PULL_TIMEOUT = 600000; // 10 minutes for pulling images (first time only)
 
 // Tool configurations
 const TOOL_CONFIGS = {
@@ -62,20 +63,38 @@ const TOOL_CONFIGS = {
     getArgs: (input, params) => [
       '-u', input,
       '-silent',
-      '-json',
+      '-jsonl',
       ...(params?.severity ? ['-severity', params.severity] : [])
     ],
     parseOutput: (stdout) => {
+      if (!stdout || !stdout.trim()) {
+        return { vulnerabilities: [], count: 0 };
+      }
+      
       const lines = stdout.trim().split('\n').filter(Boolean);
-      return {
-        vulnerabilities: lines.map(line => {
-          try {
-            return JSON.parse(line);
-          } catch {
-            return { info: line };
+      const vulnerabilities = lines.map(line => {
+        try {
+          const parsed = JSON.parse(line);
+          // Only return valid JSON objects that aren't error messages
+          if (parsed && typeof parsed === 'object') {
+            return parsed;
           }
-        }),
-        count: lines.length
+          return { raw: line };
+        } catch {
+          // For non-JSON lines, return them as raw text
+          return { raw: line };
+        }
+      }).filter(v => {
+        // Safely filter out error messages containing "flag provided"
+        if (typeof v.info === 'string' && v.info.includes('flag provided')) {
+          return false;
+        }
+        return true;
+      });
+      
+      return {
+        vulnerabilities,
+        count: vulnerabilities.length
       };
     }
   }
@@ -211,11 +230,44 @@ async function executeJob(job) {
  */
 async function runDockerContainer(image, args, timeout) {
   return new Promise(async (resolve, reject) => {
-    const timeoutHandle = setTimeout(() => {
-      reject(new Error(`Job timeout after ${timeout / 1000}s`));
-    }, timeout);
+    let timeoutHandle = null;
 
     try {
+      // Pull image if it doesn't exist (no timeout during pull)
+      try {
+        await docker.getImage(image).inspect();
+        console.log(`   ✓ Image ${image} already exists`);
+      } catch (err) {
+        console.log(`   📥 Pulling image ${image}... (this may take a few minutes)`);
+        
+        const pullTimeout = setTimeout(() => {
+          reject(new Error(`Image pull timeout after ${IMAGE_PULL_TIMEOUT / 1000}s`));
+        }, IMAGE_PULL_TIMEOUT);
+
+        try {
+          await new Promise((resolveStream, rejectStream) => {
+            docker.pull(image, (err, stream) => {
+              if (err) return rejectStream(err);
+              
+              docker.modem.followProgress(stream, (err, output) => {
+                if (err) return rejectStream(err);
+                console.log(`   ✓ Image ${image} pulled successfully`);
+                resolveStream();
+              });
+            });
+          });
+          clearTimeout(pullTimeout);
+        } catch (pullErr) {
+          clearTimeout(pullTimeout);
+          throw pullErr;
+        }
+      }
+
+      // Now start the execution timeout (only for actual job execution)
+      timeoutHandle = setTimeout(() => {
+        reject(new Error(`Job execution timeout after ${timeout / 1000}s`));
+      }, timeout);
+
       // Create container
       const container = await docker.createContainer({
         Image: image,

@@ -34,6 +34,8 @@ export default function JobDetailsPage({
   const [job, setJob] = useState<ToolJob | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredResults, setFilteredResults] = useState<any>(null);
 
   useEffect(() => {
     fetchJob();
@@ -61,11 +63,96 @@ export default function JobDetailsPage({
 
       const data = await response.json();
       setJob(data);
+      setFilteredResults(data.result_json);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  }
+
+  // Filter results based on search query
+  useEffect(() => {
+    if (!job?.result_json) {
+      setFilteredResults(null);
+      return;
+    }
+
+    if (!searchQuery) {
+      setFilteredResults(job.result_json);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const results = job.result_json;
+
+    // Handle different result structures
+    if (results.subdomains) {
+      // SUBFINDER results
+      setFilteredResults({
+        ...results,
+        subdomains: results.subdomains.filter((s: string) => s.toLowerCase().includes(query)),
+        count: results.subdomains.filter((s: string) => s.toLowerCase().includes(query)).length
+      });
+    } else if (results.results) {
+      // HTTPX/NUCLEI results
+      setFilteredResults({
+        ...results,
+        results: results.results.filter((r: any) => 
+          JSON.stringify(r).toLowerCase().includes(query)
+        ),
+        count: results.results.filter((r: any) => 
+          JSON.stringify(r).toLowerCase().includes(query)
+        ).length
+      });
+    } else {
+      setFilteredResults(results);
+    }
+  }, [searchQuery, job]);
+
+  function exportToJSON() {
+    if (!filteredResults) return;
+    const blob = new Blob([JSON.stringify(filteredResults, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${job?.tool_name}-${job?.target_input}-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportToCSV() {
+    if (!filteredResults) return;
+    
+    let csv = '';
+    const results = filteredResults;
+
+    if (results.subdomains) {
+      // SUBFINDER results
+      csv = 'Subdomain\n' + results.subdomains.join('\n');
+    } else if (results.results) {
+      // HTTPX/NUCLEI results - get all keys
+      const allKeys = new Set<string>();
+      results.results.forEach((r: any) => {
+        Object.keys(r).forEach(k => allKeys.add(k));
+      });
+      const keys = Array.from(allKeys);
+      
+      csv = keys.join(',') + '\n';
+      csv += results.results.map((r: any) => 
+        keys.map(k => JSON.stringify(r[k] || '')).join(',')
+      ).join('\n');
+    } else {
+      csv = JSON.stringify(results, null, 2);
+    }
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${job?.tool_name}-${job?.target_input}-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   if (loading) {
@@ -162,13 +249,40 @@ export default function JobDetailsPage({
       {/* Results */}
       {job.status === 'COMPLETED' && job.result_json && (
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Results ({job.result_count || 0})
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Results ({(filteredResults?.count ?? job.result_count) || 0})
+            </h2>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={exportToJSON}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                📥 Export JSON
+              </button>
+              <button
+                onClick={exportToCSV}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                📊 Export CSV
+              </button>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="🔍 Search results..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
           
           <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 max-h-96 overflow-auto">
             <pre className="text-xs text-gray-900 dark:text-gray-100 font-mono">
-              {JSON.stringify(job.result_json, null, 2)}
+              {JSON.stringify(filteredResults, null, 2)}
             </pre>
           </div>
         </div>

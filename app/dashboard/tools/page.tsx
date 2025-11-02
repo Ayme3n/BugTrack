@@ -54,8 +54,8 @@ export default function ToolsPage() {
 
   useEffect(() => {
     fetchRecentJobs();
-    // Auto-refresh every 5 seconds
-    const interval = setInterval(fetchRecentJobs, 5000);
+    // Auto-refresh every 3 seconds (faster for better UX)
+    const interval = setInterval(fetchRecentJobs, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -112,6 +112,29 @@ export default function ToolsPage() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleCancelJob(jobId: string) {
+    if (!confirm('Are you sure you want to cancel this job?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/tools/jobs/${jobId}/cancel`, {
+        method: 'POST'
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to cancel job');
+      }
+
+      // Refresh jobs list
+      fetchRecentJobs();
+      alert('✅ Job cancelled successfully!');
+    } catch (err: any) {
+      alert(`❌ Error: ${err.message}`);
     }
   }
 
@@ -280,12 +303,21 @@ export default function ToolsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs rounded-full ${
                         job.status === 'COMPLETED' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
                         job.status === 'RUNNING' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
                         job.status === 'FAILED' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                       }`}>
+                        {job.status === 'RUNNING' && (
+                          <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        )}
+                        {job.status === 'QUEUED' && '⏳'}
+                        {job.status === 'COMPLETED' && '✅'}
+                        {job.status === 'FAILED' && '❌'}
                         {job.status}
                       </span>
                     </td>
@@ -296,12 +328,22 @@ export default function ToolsPage() {
                       {job.duration_ms ? `${(job.duration_ms / 1000).toFixed(1)}s` : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <Link
-                        href={`/dashboard/tools/jobs/${job.id}`}
-                        className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                      >
-                        View →
-                      </Link>
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href={`/dashboard/tools/jobs/${job.id}`}
+                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                        >
+                          View
+                        </Link>
+                        {(job.status === 'QUEUED' || job.status === 'RUNNING') && (
+                          <button
+                            onClick={() => handleCancelJob(job.id)}
+                            className="text-red-600 hover:text-red-700 dark:text-red-400"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
